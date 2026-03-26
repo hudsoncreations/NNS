@@ -430,8 +430,10 @@
 	.exercise-screen {
 		display: flex;
 		flex-direction: column;
-		min-height: 100vh;
-		padding: 20px 24px;
+		height: 100dvh;
+		padding: 16px 20px;
+		overflow: hidden;
+		box-sizing: border-box;
 	}
 
 	.top-bar {
@@ -440,7 +442,8 @@
 		gap: 16px;
 		max-width: 700px;
 		width: 100%;
-		margin: 0 auto 32px;
+		margin: 0 auto 12px;
+		flex-shrink: 0;
 	}
 
 	.close-btn {
@@ -458,11 +461,12 @@
 	.timer-bar-wrap {
 		max-width: 700px;
 		width: 100%;
-		margin: -16px auto 0;
-		height: 10px;
+		margin: -4px auto 8px;
+		height: 8px;
 		background: var(--color-bg-elevated);
 		border-radius: 6px;
 		overflow: hidden;
+		flex-shrink: 0;
 	}
 	.timer-bar {
 		height: 100%;
@@ -508,11 +512,12 @@
 		max-width: 600px;
 		width: 100%;
 		margin: 0 auto;
-		gap: 12px;
+		gap: 6px;
+		min-height: 0;
 	}
 
 	.key-badge {
-		font-size: 14px;
+		font-size: 13px;
 		font-weight: 700;
 		color: var(--color-text-muted);
 		text-transform: uppercase;
@@ -520,30 +525,30 @@
 	}
 
 	.prompt-heading {
-		font-size: 28px;
+		font-size: 24px;
 		font-weight: 800;
 		text-align: center;
 		line-height: 1.3;
 	}
 
 	.prompt-sub {
-		font-size: 16px;
+		font-size: 15px;
 		color: var(--color-text-muted);
 		text-align: center;
 	}
 
 	.display-target {
-		font-size: 80px;
+		font-size: clamp(48px, 10vw, 80px);
 		font-weight: 800;
 		text-align: center;
 		line-height: 1;
 		color: var(--color-text);
-		padding: 16px 0;
+		padding: 8px 0;
 	}
 
 	.input-area {
 		width: 100%;
-		margin-top: 24px;
+		margin-top: 12px;
 		display: flex;
 		justify-content: center;
 	}

@@ -8,7 +8,7 @@
 
 	// Exercise pages get full-screen treatment (no header, pinned layout)
 	const isExercisePage = $derived(
-		page.url.pathname.match(/^\/key\/[^/]+\/[^/]+$/) !== null
+		page.route.id === '/key/[key]/[exercise]'
 	);
 </script>
 
@@ -39,8 +39,9 @@
 		min-height: calc(100vh - 65px);
 	}
 	.exercise-layout {
-		min-height: 100vh;
+		height: 100dvh;
 		display: flex;
 		flex-direction: column;
+		overflow: hidden;
 	}
 </style>

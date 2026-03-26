@@ -44,22 +44,21 @@
 	.numpad {
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
-		gap: 12px;
-		max-width: 420px;
+		gap: 10px;
+		max-width: 380px;
 		width: 100%;
 	}
 	.numpad-btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 18px 14px;
+		padding: 14px 10px;
 		background: var(--color-bg-card);
 		border: 2px solid var(--color-border);
-		border-bottom: 5px solid var(--color-border);
-		border-radius: 16px;
+		border-bottom: 4px solid var(--color-border);
+		border-radius: 14px;
 		transition: all 0.1s;
 		cursor: pointer;
-		min-height: 76px;
 	}
 	.numpad-btn:hover:not(:disabled) {
 		border-color: var(--color-primary);
@@ -74,7 +73,7 @@
 		cursor: default;
 	}
 	.num {
-		font-size: 28px;
+		font-size: 22px;
 		font-weight: 800;
 		color: var(--color-text);
 		line-height: 1;
