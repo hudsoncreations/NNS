@@ -1,13 +1,16 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { progress } from '$lib/stores/index.js';
 	import { KEY_ORDER } from '$lib/theory/index.js';
 	import { onMount } from 'svelte';
 
+	const tabParam = $derived(page.url.searchParams.get('tab'));
 	let activeTab: 'pathway' | 'explore' = $state('pathway');
 	let mounted = $state(false);
 
 	onMount(() => {
 		progress.init();
+		if (tabParam === 'explore') activeTab = 'explore';
 		mounted = true;
 	});
 
