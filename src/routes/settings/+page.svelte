@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { userPreferences, progress, type Difficulty, type ThemeMode } from '$lib/stores/index.js';
+	import { userPreferences, progress, type Difficulty, type ThemeMode } from '$lib/stores/index.svelte.js';
 	import { setVolume, setPlaybackSpeed } from '$lib/audio/index.js';
 	import { onMount } from 'svelte';
 

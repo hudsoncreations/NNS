@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { getDiatonicChords, getChordByDegree, type Chord } from '$lib/theory/index.js';
-	import { progress, sessionState, userPreferences } from '$lib/stores/index.js';
+	import { progress, sessionState, userPreferences } from '$lib/stores/index.svelte.js';
 	import { getExerciseType, type ExerciseType } from '$lib/exercises/config.js';
 	import MultipleChoice from './MultipleChoice.svelte';
 	import TextInput from './TextInput.svelte';

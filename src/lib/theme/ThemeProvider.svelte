@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { userPreferences } from '$lib/stores/index.js';
+	import { userPreferences } from '$lib/stores/index.svelte.js';
 	import { onMount } from 'svelte';
 
 	onMount(() => {

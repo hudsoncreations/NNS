@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { progress, userPreferences } from '$lib/stores/index.js';
+	import { progress, userPreferences } from '$lib/stores/index.svelte.js';
 	import { getExerciseType } from '$lib/exercises/config.js';
 	import ExerciseRunner from '$lib/components/ExerciseRunner.svelte';
 	import { onMount } from 'svelte';

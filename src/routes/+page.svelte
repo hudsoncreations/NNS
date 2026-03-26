@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { progress } from '$lib/stores/index.js';
+	import { progress } from '$lib/stores/index.svelte.js';
 	import { KEY_ORDER } from '$lib/theory/index.js';
 	import { onMount } from 'svelte';
 
