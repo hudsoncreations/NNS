@@ -270,37 +270,35 @@
 		background: var(--color-success);
 	}
 
-	/* Mobile: switch to 3-column grid */
+	/* Mobile: keep circle but shrink nodes to fit */
 	@media (max-width: 480px) {
-		.circle-container {
-			display: grid;
-			grid-template-columns: repeat(3, 1fr);
-			gap: 20px 12px;
-			width: 100%;
-			aspect-ratio: auto;
-			padding: 0 8px;
+		.home {
+			padding-top: 8px;
 		}
-
-		.circle-ring,
-		.circle-center-label {
-			display: none;
+		.tab-bar {
+			margin-bottom: 12px;
 		}
-
-		.circle-node {
-			position: static;
-			transform: none;
-			justify-self: center;
+		.circle-wrap {
+			padding: 0 0 12px;
 		}
-
 		.node-inner {
-			width: 60px;
-			height: 60px;
-			font-size: 17px;
+			width: 50px;
+			height: 50px;
+			font-size: 16px;
+			border-bottom-width: 4px;
 		}
-
+		.key-node {
+			gap: 3px;
+		}
+		.node-progress-dots {
+			gap: 2px;
+		}
 		.dot {
-			width: 6px;
-			height: 6px;
+			width: 5px;
+			height: 5px;
+		}
+		.circle-center-label {
+			width: 22%;
 		}
 	}
 </style>
