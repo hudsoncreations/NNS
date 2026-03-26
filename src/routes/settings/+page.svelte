@@ -57,78 +57,77 @@
 	<div class="settings">
 		<h2>Settings</h2>
 
-		<!-- Volume -->
-		<section>
-			<h3>Volume</h3>
-			<div class="slider-row">
-				<input
-					type="range"
-					min="0"
-					max="100"
-					value={Math.round(userPreferences.value.volume * 100)}
-					oninput={handleVolume}
-					class="slider"
-				/>
-				<span class="slider-value">{Math.round(userPreferences.value.volume * 100)}%</span>
-			</div>
-		</section>
+		<div class="settings-card">
+			<section>
+				<h3>Volume</h3>
+				<div class="slider-row">
+					<input
+						type="range"
+						min="0"
+						max="100"
+						value={Math.round(userPreferences.value.volume * 100)}
+						oninput={handleVolume}
+						class="slider"
+					/>
+					<span class="slider-value">{Math.round(userPreferences.value.volume * 100)}%</span>
+				</div>
+			</section>
 
-		<!-- Playback Speed -->
-		<section>
-			<h3>Playback Speed</h3>
-			<div class="option-row">
-				{#each speeds as speed}
-					<button
-						class="option-btn"
-						class:active={userPreferences.value.playbackSpeed === speed}
-						onclick={() => handleSpeed(speed)}
-					>
-						{speed}x
-					</button>
-				{/each}
-			</div>
-		</section>
+			<section>
+				<h3>Playback Speed</h3>
+				<div class="option-row">
+					{#each speeds as speed}
+						<button
+							class="option-btn"
+							class:active={userPreferences.value.playbackSpeed === speed}
+							onclick={() => handleSpeed(speed)}
+						>
+							{speed}x
+						</button>
+					{/each}
+				</div>
+			</section>
 
-		<!-- Difficulty -->
-		<section>
-			<h3>Difficulty</h3>
-			<p class="section-desc">Controls input method for exercises</p>
-			<div class="option-row">
-				{#each difficulties as diff}
-					<button
-						class="option-btn"
-						class:active={userPreferences.value.difficulty === diff.value}
-						onclick={() => handleDifficulty(diff.value)}
-					>
-						{diff.label}
-					</button>
-				{/each}
-			</div>
-		</section>
+			<section>
+				<h3>Difficulty</h3>
+				<p class="section-desc">Controls input method for exercises</p>
+				<div class="option-row">
+					{#each difficulties as diff}
+						<button
+							class="option-btn"
+							class:active={userPreferences.value.difficulty === diff.value}
+							onclick={() => handleDifficulty(diff.value)}
+						>
+							{diff.label}
+						</button>
+					{/each}
+				</div>
+			</section>
 
-		<!-- Theme -->
-		<section>
-			<h3>Theme</h3>
-			<div class="option-row">
-				{#each themes as theme}
-					<button
-						class="option-btn"
-						class:active={userPreferences.value.theme === theme.value}
-						onclick={() => handleTheme(theme.value)}
-					>
-						{theme.label}
-					</button>
-				{/each}
-			</div>
-		</section>
+			<section>
+				<h3>Theme</h3>
+				<div class="option-row">
+					{#each themes as theme}
+						<button
+							class="option-btn"
+							class:active={userPreferences.value.theme === theme.value}
+							onclick={() => handleTheme(theme.value)}
+						>
+							{theme.label}
+						</button>
+					{/each}
+				</div>
+			</section>
+		</div>
 
-		<!-- Reset -->
-		<section>
-			<h3>Data</h3>
-			<button class="danger-btn" onclick={resetProgress}>
-				Reset All Progress
-			</button>
-		</section>
+		<div class="settings-card danger-card">
+			<section>
+				<h3>Data</h3>
+				<button class="btn-3d danger" onclick={resetProgress}>
+					Reset All Progress
+				</button>
+			</section>
+		</div>
 	</div>
 {/if}
 
@@ -136,41 +135,58 @@
 	.settings {
 		display: flex;
 		flex-direction: column;
-		gap: 24px;
+		gap: 20px;
+		max-width: 560px;
+		margin: 0 auto;
 	}
 	h2 {
-		font-size: 22px;
-		font-weight: 700;
+		font-size: 28px;
+		font-weight: 800;
+	}
+	.settings-card {
+		background: var(--color-bg-card);
+		border: 2px solid var(--color-border);
+		border-radius: 16px;
+		padding: 24px;
+		display: flex;
+		flex-direction: column;
+		gap: 24px;
+	}
+	.danger-card {
+		border-color: color-mix(in srgb, var(--color-error) 30%, var(--color-border));
 	}
 	section {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: 10px;
 	}
 	h3 {
-		font-size: 15px;
-		font-weight: 600;
-		color: var(--color-text-muted);
+		font-size: 16px;
+		font-weight: 700;
+		color: var(--color-text);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		font-size: 13px;
 	}
 	.section-desc {
-		font-size: 12px;
-		color: var(--color-text-subtle);
-		margin-top: -4px;
+		font-size: 13px;
+		color: var(--color-text-muted);
+		margin-top: -6px;
 	}
 	.slider-row {
 		display: flex;
 		align-items: center;
-		gap: 12px;
+		gap: 14px;
 	}
 	.slider {
 		flex: 1;
 		accent-color: var(--color-primary);
-		height: 6px;
+		height: 8px;
 	}
 	.slider-value {
-		font-size: 14px;
-		font-weight: 600;
-		min-width: 44px;
+		font-size: 16px;
+		font-weight: 700;
+		min-width: 48px;
 		text-align: right;
 	}
 	.option-row {
@@ -179,32 +195,23 @@
 	}
 	.option-btn {
 		flex: 1;
-		padding: 10px 8px;
-		background: var(--color-bg-card);
+		padding: 12px 8px;
+		background: var(--color-bg);
 		border: 2px solid var(--color-border);
-		border-radius: 8px;
-		font-size: 13px;
-		font-weight: 600;
+		border-bottom: 4px solid var(--color-border);
+		border-radius: 12px;
+		font-size: 14px;
+		font-weight: 700;
 		color: var(--color-text);
-		transition: all 0.15s;
+		transition: all 0.1s;
+	}
+	.option-btn:active {
+		border-bottom-width: 2px;
+		transform: translateY(2px);
 	}
 	.option-btn.active {
 		border-color: var(--color-primary);
-		background: var(--color-primary);
-		color: var(--color-bg);
-	}
-	.danger-btn {
-		background: color-mix(in srgb, var(--color-error) 15%, var(--color-bg-card));
-		color: var(--color-error);
-		border: 1px solid var(--color-error);
-		border-radius: 8px;
-		padding: 12px;
-		font-size: 14px;
-		font-weight: 600;
-		transition: opacity 0.15s;
-		align-self: flex-start;
-	}
-	.danger-btn:hover {
-		opacity: 0.85;
+		background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg));
+		color: var(--color-primary);
 	}
 </style>

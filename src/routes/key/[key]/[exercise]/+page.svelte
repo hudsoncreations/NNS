@@ -23,29 +23,23 @@
 </svelte:head>
 
 {#if mounted && exerciseType}
-	<div class="exercise-header">
-		<h2>{exerciseType.name}</h2>
-		<span class="exercise-key">{exerciseKey} Major</span>
-	</div>
-
 	<ExerciseRunner {exerciseKey} {exerciseId} />
 {:else if mounted}
-	<p>Exercise not found.</p>
+	<div class="not-found">
+		<p>Exercise not found.</p>
+		<a href="/" class="btn-3d ghost">Back to Home</a>
+	</div>
 {/if}
 
 <style>
-	.exercise-header {
+	.not-found {
 		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		margin-bottom: 16px;
-	}
-	.exercise-header h2 {
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		min-height: 100vh;
+		gap: 16px;
 		font-size: 18px;
-		font-weight: 700;
-	}
-	.exercise-key {
-		font-size: 13px;
 		color: var(--color-text-muted);
 	}
 </style>

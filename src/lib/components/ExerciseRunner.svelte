@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { getDiatonicChords, getChordByDegree, type Chord } from '$lib/theory/index.js';
+	import { getDiatonicChords, getChordByDegree, getRomanNumeral, type Chord } from '$lib/theory/index.js';
 	import { progress, sessionState, userPreferences } from '$lib/stores/index.svelte.js';
 	import { getExerciseType, type ExerciseType } from '$lib/exercises/config.js';
 	import MultipleChoice from './MultipleChoice.svelte';
@@ -67,6 +67,18 @@
 	function randomDegrees(count: number, total: number = 7): number[] {
 		const all = Array.from({ length: total }, (_, i) => i + 1);
 		return shuffle(all).slice(0, count);
+	}
+
+	const DIATONIC_QUALITIES: Array<'major' | 'minor' | 'minor' | 'major' | 'major' | 'minor' | 'diminished'> =
+		['major', 'minor', 'minor', 'major', 'major', 'minor', 'diminished'];
+
+	function normalizeAnswer(input: string): string {
+		const s = input.trim().toLowerCase();
+		const num = parseInt(s, 10);
+		if (num >= 1 && num <= 7 && s === String(num)) {
+			return getRomanNumeral(num, DIATONIC_QUALITIES[num - 1]).toLowerCase();
+		}
+		return s.replace(/°/g, '°');
 	}
 
 	function generateQuestions() {
@@ -138,18 +150,17 @@
 		let correctStr: string;
 
 		if (Array.isArray(answer) && Array.isArray(q.correctAnswer)) {
-			// Chord spelling — count correct placements
 			let correctCount = 0;
 			for (let i = 0; i < answer.length; i++) {
 				if (answer[i] === q.correctAnswer[i]) correctCount++;
 			}
-			correct = correctCount >= 6; // 6/7 = ~86%
+			correct = correctCount >= 6;
 			userStr = `${correctCount}/7 correct`;
 			correctStr = q.correctAnswer.join(', ');
 		} else {
 			const ansStr = typeof answer === 'string' ? answer : answer.join(', ');
 			const correctAns = typeof q.correctAnswer === 'string' ? q.correctAnswer : q.correctAnswer.join(', ');
-			correct = ansStr.toLowerCase().trim() === correctAns.toLowerCase().trim();
+			correct = normalizeAnswer(ansStr) === normalizeAnswer(correctAns);
 			userStr = ansStr;
 			correctStr = correctAns;
 		}
@@ -160,7 +171,6 @@
 		answers = [...answers, { question: q.prompt, answer: userStr, correct, correctAnswer: correctStr }];
 		phase = 'feedback';
 
-		// Auto-advance after feedback
 		setTimeout(() => {
 			disabled = false;
 			if (currentIndex < questions.length - 1) {
@@ -192,9 +202,13 @@
 		goto(`/key/${encodeURIComponent(exerciseKey)}`);
 	}
 
+	function closeExercise() {
+		goto(`/key/${encodeURIComponent(exerciseKey)}`);
+	}
+
 	const currentQuestion = $derived(questions[currentIndex]);
 	const progressPercent = $derived(
-		questions.length > 0 ? (currentIndex / questions.length) * 100 : 0
+		questions.length > 0 ? ((currentIndex + (phase === 'feedback' ? 1 : 0)) / questions.length) * 100 : 0
 	);
 	const scoreData = $derived({
 		correct: answers.filter((a) => a.correct).length,
@@ -206,122 +220,186 @@
 </script>
 
 {#if exerciseType && currentQuestion && phase !== 'summary'}
-	<div class="exercise">
-		<!-- Progress bar -->
-		<div class="progress-bar-wrap">
-			<div class="progress-bar" style="width: {progressPercent}%"></div>
+	<div class="exercise-screen">
+		<!-- Top bar: close, progress, counter -->
+		<div class="top-bar">
+			<button class="close-btn" onclick={closeExercise} aria-label="Close exercise">
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+					<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+				</svg>
+			</button>
+			<div class="progress-track">
+				<div class="progress-fill" style="width: {progressPercent}%"></div>
+			</div>
+			<div class="counter">{currentIndex + 1}/{questions.length}</div>
 		</div>
-		<div class="progress-label">{currentIndex + 1} / {questions.length}</div>
 
-		<!-- Question phase -->
-		{#if phase === 'question'}
-			<div class="prompt">
+		<!-- Center content -->
+		<div class="center-content">
+			{#if phase === 'question'}
 				{#if exerciseId === 'audioId' && currentQuestion.referenceChord && currentQuestion.targetChord}
-					<p class="key-label">Key of {exerciseKey} Major</p>
-					<p class="prompt-text">Listen: you'll hear the I chord, then a mystery chord.</p>
-					<p class="prompt-sub">{currentQuestion.prompt}</p>
+					<h2 class="prompt-heading">Listen and identify</h2>
+					<p class="prompt-sub">You'll hear the I chord, then a mystery chord. {currentQuestion.prompt}</p>
 
 					<AudioPlayer
 						referenceNotes={currentQuestion.referenceChord.notes}
 						targetNotes={currentQuestion.targetChord.notes}
 						speed={userPreferences.value.playbackSpeed}
 					/>
+				{:else if currentQuestion.type === 'dragDrop'}
+					<h2 class="prompt-heading">{currentQuestion.prompt}</h2>
+					<p class="key-badge">{exerciseKey} Major</p>
 				{:else}
-					<p class="key-label">Key of {exerciseKey} Major</p>
-					<p class="prompt-text">{currentQuestion.prompt}</p>
+					<p class="key-badge">{exerciseKey} Major</p>
+					<h2 class="prompt-heading">{currentQuestion.prompt}</h2>
 				{/if}
-			</div>
 
-			<div class="input-area">
-				{#if currentQuestion.type === 'dragDrop' && currentQuestion.slots && currentQuestion.items}
-					<DragDrop
-						slots={currentQuestion.slots}
-						items={currentQuestion.items}
-						onAnswer={handleAnswer}
-						{disabled}
-					/>
-				{:else if currentQuestion.type === 'multipleChoice' && currentQuestion.options}
-					<MultipleChoice
-						options={currentQuestion.options}
-						onAnswer={(a) => handleAnswer(a)}
-						{disabled}
-					/>
-				{:else if currentQuestion.type === 'text'}
-					<TextInput
-						onAnswer={(a) => handleAnswer(a)}
-						{disabled}
-					/>
-				{/if}
-			</div>
-		{/if}
+				<div class="input-area">
+					{#if currentQuestion.type === 'dragDrop' && currentQuestion.slots && currentQuestion.items}
+						<DragDrop
+							slots={currentQuestion.slots}
+							items={currentQuestion.items}
+							onAnswer={handleAnswer}
+							{disabled}
+						/>
+					{:else if currentQuestion.type === 'multipleChoice' && currentQuestion.options}
+						<MultipleChoice
+							options={currentQuestion.options}
+							onAnswer={(a) => handleAnswer(a)}
+							{disabled}
+						/>
+					{:else if currentQuestion.type === 'text'}
+						<TextInput
+							onAnswer={(a) => handleAnswer(a)}
+							{disabled}
+						/>
+					{/if}
+				</div>
+			{/if}
 
-		<!-- Feedback phase -->
-		{#if phase === 'feedback'}
-			<div class="prompt">
-				<p class="key-label">Key of {exerciseKey} Major</p>
-				<p class="prompt-text">{currentQuestion.prompt}</p>
-			</div>
-			<FeedbackDisplay
-				correct={lastCorrect}
-				correctAnswer={lastCorrectAnswer}
-				userAnswer={lastUserAnswer}
-			/>
-		{/if}
+			{#if phase === 'feedback'}
+				<h2 class="prompt-heading">{currentQuestion.prompt}</h2>
+				<FeedbackDisplay
+					correct={lastCorrect}
+					correctAnswer={lastCorrectAnswer}
+					userAnswer={lastUserAnswer}
+				/>
+			{/if}
+		</div>
 	</div>
 {/if}
 
 {#if phase === 'summary'}
-	<SessionSummary
-		score={scoreData}
-		{passed}
-		{answers}
-		onRetry={retry}
-		onBack={goBack}
-	/>
+	<div class="exercise-screen">
+		<div class="top-bar">
+			<button class="close-btn" onclick={goBack} aria-label="Close">
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+					<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+				</svg>
+			</button>
+			<div class="progress-track">
+				<div class="progress-fill" style="width: 100%"></div>
+			</div>
+			<div class="counter"></div>
+		</div>
+		<div class="center-content">
+			<SessionSummary
+				score={scoreData}
+				{passed}
+				{answers}
+				onRetry={retry}
+				onBack={goBack}
+			/>
+		</div>
+	</div>
 {/if}
 
 <style>
-	.exercise {
+	.exercise-screen {
 		display: flex;
 		flex-direction: column;
-		gap: 20px;
+		min-height: 100vh;
+		padding: 20px 24px;
 	}
-	.progress-bar-wrap {
-		height: 4px;
-		background: var(--color-bg-card);
-		border-radius: 4px;
+
+	.top-bar {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		max-width: 700px;
+		width: 100%;
+		margin: 0 auto 32px;
+	}
+
+	.close-btn {
+		color: var(--color-text-muted);
+		padding: 4px;
+		border-radius: 8px;
+		display: flex;
+		transition: color 0.15s;
+		flex-shrink: 0;
+	}
+	.close-btn:hover {
+		color: var(--color-text);
+	}
+
+	.progress-track {
+		flex: 1;
+		height: 16px;
+		background: var(--color-bg-elevated);
+		border-radius: 10px;
 		overflow: hidden;
 	}
-	.progress-bar {
+	.progress-fill {
 		height: 100%;
-		background: var(--color-primary);
-		border-radius: 4px;
-		transition: width 0.3s ease;
+		background: var(--color-success);
+		border-radius: 10px;
+		transition: width 0.4s ease;
 	}
-	.progress-label {
-		font-size: 13px;
+
+	.counter {
+		font-size: 14px;
+		font-weight: 700;
 		color: var(--color-text-muted);
+		min-width: 36px;
 		text-align: right;
 	}
-	.prompt {
+
+	.center-content {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		max-width: 600px;
+		width: 100%;
+		margin: 0 auto;
+		gap: 24px;
+	}
+
+	.key-badge {
+		font-size: 14px;
+		font-weight: 700;
+		color: var(--color-text-muted);
+		text-transform: uppercase;
+		letter-spacing: 1px;
+	}
+
+	.prompt-heading {
+		font-size: 28px;
+		font-weight: 800;
+		text-align: center;
+		line-height: 1.3;
+	}
+
+	.prompt-sub {
+		font-size: 16px;
+		color: var(--color-text-muted);
 		text-align: center;
 	}
-	.key-label {
-		font-size: 13px;
-		color: var(--color-text-muted);
-		margin-bottom: 8px;
-	}
-	.prompt-text {
-		font-size: 18px;
-		font-weight: 600;
-		line-height: 1.4;
-	}
-	.prompt-sub {
-		font-size: 15px;
-		margin-top: 4px;
-		color: var(--color-text-muted);
-	}
+
 	.input-area {
+		width: 100%;
 		margin-top: 8px;
 	}
 </style>

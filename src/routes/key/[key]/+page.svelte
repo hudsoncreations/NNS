@@ -34,44 +34,54 @@
 
 {#if mounted}
 	<div class="page">
-		<div class="key-header">
+		<div class="key-hero">
 			<h2>{currentKey} Major</h2>
 			<span class="key-position">{keyIndex + 1} of {KEY_ORDER.length}</span>
 		</div>
 
 		{#if nextKey && keyProgress.status !== 'completed'}
-			<p class="unlock-hint">Complete all exercises to unlock {nextKey} Major</p>
+			<p class="unlock-hint">Complete all exercises to unlock <strong>{nextKey} Major</strong></p>
 		{:else if keyProgress.status === 'completed'}
 			<p class="unlock-hint completed-hint">Key completed!</p>
 		{/if}
 
-		<div class="progress-summary">{completedCount} / {EXERCISE_TYPES.length} exercises done</div>
+		<!-- Progress ring -->
+		<div class="progress-ring-wrap">
+			<div class="progress-ring">
+				<span class="ring-number">{completedCount}</span>
+				<span class="ring-label">/ {EXERCISE_TYPES.length}</span>
+			</div>
+		</div>
 
 		<div class="exercise-grid">
 			{#each exercises as exercise}
 				<a
 					href="/key/{encodeURIComponent(currentKey)}/{exercise.id}"
 					class="exercise-tile"
+					class:completed={exercise.progress.completed}
 				>
-					<div class="tile-header">
-						<span class="tile-name">{exercise.name}</span>
-						<span class="tile-status">
-							{#if exercise.progress.completed}
-								<span class="status-icon done">&#10003;</span>
-							{:else if exercise.progress.attempts > 0}
-								<span class="status-icon in-progress">&#9684;</span>
-							{:else}
-								<span class="status-icon not-started">&#9675;</span>
-							{/if}
-						</span>
-					</div>
-					<p class="tile-desc">{exercise.description}</p>
-					<div class="tile-score">
-						{#if exercise.progress.attempts > 0}
-							Best: {Math.round(exercise.progress.bestScore * 100)}%
+					<div class="tile-icon">
+						{#if exercise.progress.completed}
+							<div class="icon-circle done">
+								<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+									<path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+							</div>
+						{:else if exercise.progress.attempts > 0}
+							<div class="icon-circle in-progress">
+								<span>{Math.round(exercise.progress.bestScore * 100)}%</span>
+							</div>
 						{:else}
-							Not started
+							<div class="icon-circle not-started">
+								<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+									<path d="M8 5l8 7-8 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+							</div>
 						{/if}
+					</div>
+					<div class="tile-content">
+						<span class="tile-name">{exercise.name}</span>
+						<span class="tile-desc">{exercise.description}</span>
 					</div>
 				</a>
 			{/each}
@@ -81,84 +91,128 @@
 
 <style>
 	.page {
-		padding-top: 8px;
-	}
-	.key-header {
 		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		margin-bottom: 4px;
+		flex-direction: column;
+		align-items: center;
+		padding-top: 16px;
 	}
-	.key-header h2 {
-		font-size: 22px;
-		font-weight: 700;
+	.key-hero {
+		text-align: center;
+		margin-bottom: 8px;
+	}
+	.key-hero h2 {
+		font-size: 32px;
+		font-weight: 800;
 	}
 	.key-position {
 		color: var(--color-text-muted);
-		font-size: 13px;
+		font-size: 14px;
+		font-weight: 600;
 	}
 	.unlock-hint {
 		color: var(--color-text-subtle);
-		font-size: 13px;
-		margin-bottom: 12px;
+		font-size: 14px;
+		text-align: center;
+		margin-bottom: 20px;
 	}
 	.completed-hint {
 		color: var(--color-success);
+		font-weight: 700;
 	}
-	.progress-summary {
-		color: var(--color-text-muted);
-		font-size: 13px;
-		margin-bottom: 16px;
+
+	.progress-ring-wrap {
+		margin-bottom: 32px;
 	}
-	.exercise-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 12px;
-	}
-	.exercise-tile {
+	.progress-ring {
+		width: 80px;
+		height: 80px;
+		border-radius: 50%;
 		background: var(--color-bg-card);
-		border-radius: 10px;
-		padding: 16px;
-		text-decoration: none;
-		color: var(--color-text);
-		transition: transform 0.15s, box-shadow 0.15s;
+		border: 4px solid var(--color-border);
 		display: flex;
-		flex-direction: column;
-		gap: 6px;
-	}
-	.exercise-tile:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-		text-decoration: none;
-	}
-	.tile-header {
-		display: flex;
-		justify-content: space-between;
 		align-items: center;
+		justify-content: center;
+		gap: 2px;
 	}
-	.tile-name {
-		font-size: 13px;
+	.ring-number {
+		font-size: 28px;
+		font-weight: 800;
+		color: var(--color-primary);
+	}
+	.ring-label {
+		font-size: 16px;
+		color: var(--color-text-muted);
 		font-weight: 600;
 	}
-	.status-icon {
+
+	.exercise-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		width: 100%;
+		max-width: 560px;
+	}
+	.exercise-tile {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		padding: 18px 20px;
+		background: var(--color-bg-card);
+		border: 2px solid var(--color-border);
+		border-bottom: 4px solid var(--color-border);
+		border-radius: 16px;
+		text-decoration: none;
+		color: var(--color-text);
+		transition: all 0.1s;
+	}
+	.exercise-tile:hover {
+		border-color: var(--color-text-muted);
+		background: var(--color-bg-elevated);
+		text-decoration: none;
+	}
+	.exercise-tile:active {
+		border-bottom-width: 2px;
+		transform: translateY(2px);
+	}
+	.exercise-tile.completed {
+		border-color: var(--color-success);
+	}
+
+	.icon-circle {
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 800;
 		font-size: 14px;
+		flex-shrink: 0;
 	}
-	.status-icon.done {
-		color: var(--color-success);
+	.icon-circle.done {
+		background: var(--color-success);
+		color: var(--color-bg);
 	}
-	.status-icon.in-progress {
-		color: var(--color-warning);
+	.icon-circle.in-progress {
+		background: var(--color-warning);
+		color: var(--color-bg);
 	}
-	.status-icon.not-started {
-		color: var(--color-text-subtle);
+	.icon-circle.not-started {
+		background: var(--color-bg-elevated);
+		color: var(--color-text-muted);
+	}
+
+	.tile-content {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.tile-name {
+		font-size: 16px;
+		font-weight: 700;
 	}
 	.tile-desc {
-		font-size: 11px;
+		font-size: 13px;
 		color: var(--color-text-muted);
-		line-height: 1.3;
-	}
-	.tile-score {
-		font-size: 11px;
-		margin-top: auto;
 	}
 </style>

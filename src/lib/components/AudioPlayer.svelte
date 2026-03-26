@@ -23,8 +23,8 @@
 	}
 </script>
 
-<div class="audio-player">
-	<button class="play-btn" onclick={play} disabled={playing} aria-label="Play chords">
+<button class="audio-btn" onclick={play} disabled={playing}>
+	<div class="play-circle">
 		{#if playing}
 			<span class="playing-indicator">
 				<span class="bar"></span>
@@ -32,62 +32,72 @@
 				<span class="bar"></span>
 			</span>
 		{:else}
-			<span class="play-icon">&#9654;</span>
+			<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+				<polygon points="6,4 20,12 6,20" />
+			</svg>
 		{/if}
-	</button>
+	</div>
 	<div class="play-info">
 		<div class="play-label">{hasPlayed ? 'Replay' : 'Play'} Chords</div>
-		<div class="play-desc">I chord &rarr; ? chord</div>
+		<div class="play-desc">I chord &rarr; mystery chord</div>
 	</div>
-	<div class="speed-label">{speed}x</div>
-</div>
+	<div class="speed-badge">{speed}x</div>
+</button>
 
 <style>
-	.audio-player {
+	.audio-btn {
 		display: flex;
 		align-items: center;
-		gap: 14px;
-		padding: 14px 16px;
+		gap: 16px;
+		padding: 18px 22px;
 		background: var(--color-bg-card);
-		border-radius: 12px;
+		border: 2px solid var(--color-border);
+		border-bottom: 4px solid var(--color-border);
+		border-radius: 16px;
+		cursor: pointer;
+		width: 100%;
+		transition: all 0.1s;
+		text-align: left;
 	}
-	.play-btn {
-		width: 48px;
-		height: 48px;
+	.audio-btn:hover:not(:disabled) {
+		border-color: var(--color-primary);
+	}
+	.audio-btn:active:not(:disabled) {
+		border-bottom-width: 2px;
+		transform: translateY(2px);
+	}
+	.audio-btn:disabled {
+		opacity: 0.7;
+	}
+	.play-circle {
+		width: 56px;
+		height: 56px;
 		border-radius: 50%;
 		background: var(--color-primary);
 		color: var(--color-bg);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 20px;
-		transition: transform 0.15s;
 		flex-shrink: 0;
 	}
-	.play-btn:not(:disabled):hover {
-		transform: scale(1.05);
-	}
-	.play-btn:disabled {
-		opacity: 0.7;
-	}
-	.play-icon {
+	.play-circle svg {
 		margin-left: 3px;
 	}
 	.playing-indicator {
 		display: flex;
 		gap: 3px;
 		align-items: flex-end;
-		height: 18px;
+		height: 20px;
 	}
 	.bar {
-		width: 3px;
+		width: 4px;
 		background: var(--color-bg);
 		border-radius: 2px;
 		animation: pulse 0.8s ease-in-out infinite;
 	}
 	.bar:nth-child(1) { height: 8px; animation-delay: 0s; }
-	.bar:nth-child(2) { height: 14px; animation-delay: 0.15s; }
-	.bar:nth-child(3) { height: 10px; animation-delay: 0.3s; }
+	.bar:nth-child(2) { height: 16px; animation-delay: 0.15s; }
+	.bar:nth-child(3) { height: 12px; animation-delay: 0.3s; }
 	@keyframes pulse {
 		0%, 100% { transform: scaleY(1); }
 		50% { transform: scaleY(1.6); }
@@ -96,15 +106,20 @@
 		flex: 1;
 	}
 	.play-label {
-		font-size: 14px;
-		font-weight: 600;
+		font-size: 17px;
+		font-weight: 700;
 	}
 	.play-desc {
-		font-size: 12px;
+		font-size: 13px;
 		color: var(--color-text-muted);
+		margin-top: 2px;
 	}
-	.speed-label {
-		font-size: 12px;
+	.speed-badge {
+		font-size: 13px;
+		font-weight: 700;
 		color: var(--color-text-muted);
+		background: var(--color-bg-elevated);
+		padding: 4px 10px;
+		border-radius: 8px;
 	}
 </style>

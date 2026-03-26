@@ -27,7 +27,7 @@ export const EXERCISE_TYPES: ExerciseType[] = [
 		name: 'Identify the Number',
 		description: 'What scale degree is this chord?',
 		hasAudio: false,
-		questionsPerSession: 5,
+		questionsPerSession: 7,
 		passThreshold: 0.8
 	},
 	{
@@ -35,7 +35,7 @@ export const EXERCISE_TYPES: ExerciseType[] = [
 		name: 'Identify the Chord',
 		description: 'What chord is this scale degree?',
 		hasAudio: false,
-		questionsPerSession: 5,
+		questionsPerSession: 7,
 		passThreshold: 0.8
 	},
 	{
@@ -43,7 +43,7 @@ export const EXERCISE_TYPES: ExerciseType[] = [
 		name: 'Audio Identification',
 		description: 'Listen and identify the chord number',
 		hasAudio: true,
-		questionsPerSession: 5,
+		questionsPerSession: 7,
 		passThreshold: 0.8
 	}
 ];

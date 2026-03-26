@@ -15,46 +15,25 @@
 	}
 </script>
 
-<div class="choice-grid">
-	{#each options as option}
+<div class="choices">
+	{#each options as option, i}
 		<button
-			class="choice-btn"
+			class="btn-option"
 			class:selected={selected === option}
 			{disabled}
 			onclick={() => select(option)}
 		>
-			{option}
+			<span class="option-number">{i + 1}</span>
+			<span class="option-text">{option}</span>
 		</button>
 	{/each}
 </div>
 
 <style>
-	.choice-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 8px;
-	}
-	.choice-btn {
-		background: var(--color-bg-card);
-		border: 2px solid var(--color-border);
-		border-radius: 10px;
-		padding: 14px 8px;
-		font-size: 16px;
-		font-weight: 600;
-		color: var(--color-text);
-		transition: all 0.15s;
-	}
-	.choice-btn:not(:disabled):hover {
-		border-color: var(--color-primary);
-		color: var(--color-primary);
-	}
-	.choice-btn.selected {
-		border-color: var(--color-primary);
-		background: var(--color-primary);
-		color: var(--color-bg);
-	}
-	.choice-btn:disabled {
-		opacity: 0.6;
-		cursor: default;
+	.choices {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		width: 100%;
 	}
 </style>

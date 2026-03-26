@@ -2,8 +2,14 @@
 	import '$lib/theme/global.css';
 	import ThemeProvider from '$lib/theme/ThemeProvider.svelte';
 	import Header from '$lib/components/Header.svelte';
+	import { page } from '$app/state';
 
 	let { children } = $props();
+
+	// Exercise pages get full-screen treatment (no header, pinned layout)
+	const isExercisePage = $derived(
+		page.url.pathname.match(/^\/key\/[^/]+\/[^/]+$/) !== null
+	);
 </script>
 
 <svelte:head>
@@ -12,16 +18,29 @@
 </svelte:head>
 
 <ThemeProvider />
-<Header />
-<main>
-	{@render children()}
-</main>
+
+{#if isExercisePage}
+	<!-- Exercise: full viewport, no header -->
+	<div class="exercise-layout">
+		{@render children()}
+	</div>
+{:else}
+	<Header />
+	<main>
+		{@render children()}
+	</main>
+{/if}
 
 <style>
 	main {
-		max-width: 600px;
+		max-width: 900px;
 		margin: 0 auto;
-		padding: 16px;
-		min-height: calc(100vh - 57px);
+		padding: 24px 24px 48px;
+		min-height: calc(100vh - 65px);
+	}
+	.exercise-layout {
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
 	}
 </style>
