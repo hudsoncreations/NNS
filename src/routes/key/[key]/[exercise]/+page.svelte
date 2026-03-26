@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { page } from '$app/state';
 	import { progress, userPreferences } from '$lib/stores/index.svelte.js';
 	import { getExerciseType } from '$lib/exercises/config.js';
@@ -27,7 +28,7 @@
 {:else if mounted}
 	<div class="not-found">
 		<p>Exercise not found.</p>
-		<a href="/" class="btn-3d ghost">Back to Home</a>
+		<a href="{base}/" class="btn-3d ghost">Back to Home</a>
 	</div>
 {/if}
 

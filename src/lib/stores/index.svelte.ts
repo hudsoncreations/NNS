@@ -13,11 +13,15 @@ export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type KeyStatus = 'locked' | 'in_progress' | 'completed';
 
+export type TimerDuration = 0 | 15 | 30 | 60 | 120;
+
 export type UserPreferences = {
 	volume: number;
 	playbackSpeed: number;
 	difficulty: Difficulty;
 	theme: ThemeMode;
+	timerEnabled: boolean;
+	timerDuration: TimerDuration;
 };
 
 export type ExerciseProgress = {
@@ -50,7 +54,9 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 	volume: 0.8,
 	playbackSpeed: 1,
 	difficulty: 'beginner',
-	theme: 'system'
+	theme: 'system',
+	timerEnabled: false,
+	timerDuration: 60
 };
 
 function createDefaultProgress(): Progress {

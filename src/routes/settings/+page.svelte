@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { userPreferences, progress, type Difficulty, type ThemeMode } from '$lib/stores/index.svelte.js';
+	import { userPreferences, progress, type Difficulty, type ThemeMode, type TimerDuration } from '$lib/stores/index.svelte.js';
 	import { setVolume, setPlaybackSpeed } from '$lib/audio/index.js';
 	import { onMount } from 'svelte';
 
@@ -30,6 +30,14 @@
 		userPreferences.update({ theme });
 	}
 
+	function handleTimerToggle(enabled: boolean) {
+		userPreferences.update({ timerEnabled: enabled });
+	}
+
+	function handleTimerDuration(duration: TimerDuration) {
+		userPreferences.update({ timerDuration: duration });
+	}
+
 	function resetProgress() {
 		if (confirm('Reset all progress? This cannot be undone.')) {
 			progress.reset();
@@ -46,6 +54,12 @@
 		{ value: 'system', label: 'System' },
 		{ value: 'light', label: 'Light' },
 		{ value: 'dark', label: 'Dark' }
+	];
+	const timerDurations: { value: TimerDuration; label: string }[] = [
+		{ value: 120, label: '2 min' },
+		{ value: 60, label: '1 min' },
+		{ value: 30, label: '30s' },
+		{ value: 15, label: '15s' }
 	];
 </script>
 
@@ -117,6 +131,40 @@
 						</button>
 					{/each}
 				</div>
+			</section>
+
+			<section>
+				<h3>Exercise Timer</h3>
+				<p class="section-desc">Add a countdown timer to exercises</p>
+				<div class="option-row">
+					<button
+						class="option-btn"
+						class:active={!userPreferences.value.timerEnabled}
+						onclick={() => handleTimerToggle(false)}
+					>
+						Off
+					</button>
+					<button
+						class="option-btn"
+						class:active={userPreferences.value.timerEnabled}
+						onclick={() => handleTimerToggle(true)}
+					>
+						On
+					</button>
+				</div>
+				{#if userPreferences.value.timerEnabled}
+					<div class="option-row">
+						{#each timerDurations as dur}
+							<button
+								class="option-btn"
+								class:active={userPreferences.value.timerDuration === dur.value}
+								onclick={() => handleTimerDuration(dur.value)}
+							>
+								{dur.label}
+							</button>
+						{/each}
+					</div>
+				{/if}
 			</section>
 		</div>
 

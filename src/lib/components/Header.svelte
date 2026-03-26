@@ -1,27 +1,30 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { page } from '$app/state';
+	import Logo from './Logo.svelte';
 
-	const isHome = $derived(page.url.pathname === '/' || page.url.pathname === '/explore');
+	const isHome = $derived(page.url.pathname === base + '/' || page.url.pathname === base + '/explore' || page.url.pathname === base);
 	const showBack = $derived(!isHome);
 </script>
 
 <header>
 	<nav class="header-nav">
 		{#if showBack}
-			<a href="/" class="back-btn" aria-label="Back to pathway">
+			<a href="{base}/" class="back-btn" aria-label="Back to pathway">
 				<svg width="22" height="22" viewBox="0 0 20 20" fill="none">
 					<path d="M12 16l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 				</svg>
 			</a>
 		{/if}
-		<h1 class="logo">
-			<a href="/">NNS ABCs</a>
-		</h1>
+		<a href="{base}/" class="logo-link" aria-label="Home">
+			<Logo />
+		</a>
+		<div class="header-spacer"></div>
 		<div class="header-actions">
-			<a href="/settings" class="settings-btn" aria-label="Settings">
-				<svg width="22" height="22" viewBox="0 0 20 20" fill="none">
-					<circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/>
-					<path d="M10 1v2M10 17v2M1 10h2M17 10h2M3.5 3.5l1.4 1.4M15.1 15.1l1.4 1.4M3.5 16.5l1.4-1.4M15.1 4.9l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+			<a href="{base}/settings" class="settings-btn" aria-label="Settings">
+				<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+					<path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="2"/>
+					<path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 				</svg>
 			</a>
 		</div>
@@ -39,20 +42,22 @@
 	.header-nav {
 		max-width: 900px;
 		margin: 0 auto;
-		padding: 14px 24px;
+		padding: 10px 24px;
 		display: flex;
 		align-items: center;
 		gap: 16px;
 	}
-	.logo {
-		font-size: 24px;
-		font-weight: 800;
+	.logo-link {
+		text-decoration: none;
+		width: 90px;
+		flex-shrink: 0;
+	}
+	.header-spacer {
 		flex: 1;
 	}
-	.logo a {
-		color: var(--color-success);
+	.logo-link:hover {
 		text-decoration: none;
-		letter-spacing: -0.5px;
+		opacity: 0.85;
 	}
 	.back-btn, .settings-btn {
 		color: var(--color-text-muted);

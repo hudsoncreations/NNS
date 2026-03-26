@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { page } from '$app/state';
 	import { progress } from '$lib/stores/index.svelte.js';
 	import { KEY_ORDER } from '$lib/theory/index.js';
 	import { onMount } from 'svelte';
+	import Logo from '$lib/components/Logo.svelte';
 
 	const tabParam = $derived(page.url.searchParams.get('tab'));
 	let activeTab: 'pathway' | 'explore' = $state('pathway');
@@ -14,18 +16,43 @@
 		mounted = true;
 	});
 
-	const keys = $derived(
-		KEY_ORDER.map((key, i) => ({
-			key,
-			index: i,
-			status: progress.getKeyProgress(key).status,
-			exercisesDone: (['chordSpelling', 'identifyNumber', 'identifyChord', 'audioId']
-				.filter((ex) => progress.getExerciseProgress(key, ex).completed).length)
-		}))
-	);
+	// Circle of fifths: key + angle (degrees clockwise from 12 o'clock)
+	const CIRCLE_KEYS = [
+		{ key: 'C', angle: 0 },
+		{ key: 'G', angle: 30 },
+		{ key: 'D', angle: 60 },
+		{ key: 'A', angle: 90 },
+		{ key: 'E', angle: 120 },
+		{ key: 'B', angle: 150 },
+		{ key: 'Gb', angle: 180 },
+		{ key: 'Db', angle: 210 },
+		{ key: 'Ab', angle: 240 },
+		{ key: 'Eb', angle: 270 },
+		{ key: 'Bb', angle: 300 },
+		{ key: 'F', angle: 330 },
+	];
 
-	// Zigzag offsets for the winding path (like Duolingo)
-	const offsets = [0, 60, 90, 60, 0, -60, -90, -60, 0, 60, 90, 60];
+	const RADIUS = 36; // % of container from center
+
+	// Learning order index for each key (shown in Pathway tab)
+	const learningOrder = new Map(KEY_ORDER.map((k, i) => [k, i + 1]));
+
+	const circleNodes = $derived(
+		CIRCLE_KEYS.map(({ key, angle }) => {
+			const rad = angle * (Math.PI / 180);
+			const status = progress.getKeyProgress(key).status;
+			return {
+				key,
+				angle,
+				status,
+				order: learningOrder.get(key) ?? 0,
+				exercisesDone: (['chordSpelling', 'identifyNumber', 'identifyChord', 'audioId'] as const)
+					.filter((ex) => progress.getExerciseProgress(key, ex).completed).length,
+				left: 50 + Math.sin(rad) * RADIUS,
+				top: 50 - Math.cos(rad) * RADIUS,
+			};
+		})
+	);
 </script>
 
 {#if mounted}
@@ -48,53 +75,52 @@
 			</button>
 		</div>
 
-		<!-- Winding pathway -->
-		<div class="pathway">
-			{#each keys as { key, index, status, exercisesDone }}
-				{@const isAccessible = activeTab === 'explore' || status !== 'locked'}
-				{@const isCurrent = status === 'in_progress'}
-				{@const isDone = status === 'completed'}
-				<div class="node-row" style="transform: translateX({offsets[index]}px)">
-					{#if isAccessible}
-						<a
-							href="/key/{encodeURIComponent(key)}"
-							class="key-node"
-							class:current={isCurrent || activeTab === 'explore'}
-							class:done={isDone}
-							aria-label="{key} major"
-						>
-							{#if isDone}
-								<div class="node-inner done">
-									<svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-										<path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-									</svg>
-								</div>
-							{:else if isCurrent || activeTab === 'explore'}
-								<div class="node-inner current">
+		<!-- Circle of Fifths -->
+		<div class="circle-wrap">
+			<div class="circle-container">
+				<!-- Decorative ring -->
+				<svg class="circle-ring" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+					<circle cx="50" cy="50" r={RADIUS} fill="none" stroke="var(--color-border-muted)" stroke-width="0.3" stroke-dasharray="1.5 1.5" opacity="0.5" />
+				</svg>
+
+				<!-- Center logo -->
+				<div class="circle-center-label">
+					<Logo />
+				</div>
+
+				<!-- Key nodes positioned around the circle -->
+				{#each circleNodes as { key, status, exercisesDone, order, left, top }}
+					{@const isAccessible = activeTab === 'explore' || status !== 'locked'}
+					{@const isCurrent = status === 'in_progress'}
+					{@const isDone = status === 'completed'}
+					<div class="circle-node" style="left: {left}%; top: {top}%">
+						{#if isAccessible}
+							<a
+								href="{base}/key/{encodeURIComponent(key)}"
+								class="key-node"
+								class:current={isCurrent || activeTab === 'explore'}
+								class:done={isDone}
+								aria-label="{key} major"
+							>
+								<div class="node-inner" class:done={isDone} class:current={!isDone && (isCurrent || activeTab === 'explore')}>
 									<span class="node-label">{key}</span>
 								</div>
-								{#if isCurrent && activeTab === 'pathway'}
-									<div class="start-badge">START</div>
-								{/if}
-							{/if}
-							<div class="node-progress-dots">
-								{#each Array(4) as _, i}
-									<div class="dot" class:filled={i < exercisesDone}></div>
-								{/each}
+								<div class="node-progress-dots">
+									{#each Array(4) as _, i}
+										<div class="dot" class:filled={i < exercisesDone}></div>
+									{/each}
+								</div>
+							</a>
+						{:else}
+							<div class="key-node locked" aria-label="{key} major (locked)">
+								<div class="node-inner locked">
+									<span class="node-label">{key}</span>
+								</div>
 							</div>
-						</a>
-					{:else}
-						<div class="key-node locked" aria-label="{key} major (locked)">
-							<div class="node-inner locked">
-								<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-									<rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="2"/>
-									<path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-								</svg>
-							</div>
-						</div>
-					{/if}
-				</div>
-			{/each}
+						{/if}
+					</div>
+				{/each}
+			</div>
 		</div>
 	</div>
 {/if}
@@ -105,11 +131,12 @@
 		flex-direction: column;
 		align-items: center;
 		padding-top: 12px;
+		min-height: calc(100vh - 70px);
 	}
 	.tab-bar {
 		display: flex;
 		gap: 4px;
-		margin-bottom: 40px;
+		margin-bottom: 20px;
 		background: var(--color-bg-card);
 		border-radius: 14px;
 		padding: 4px;
@@ -133,25 +160,52 @@
 		border-bottom: 3px solid color-mix(in srgb, var(--color-primary) 70%, black);
 	}
 
-	.pathway {
+	/* Circle of fifths layout */
+	.circle-wrap {
 		display: flex;
-		flex-direction: column;
+		justify-content: center;
 		align-items: center;
-		gap: 24px;
-		padding-bottom: 60px;
+		flex: 1;
+		padding: 10px 0 20px;
 	}
 
-	.node-row {
-		transition: transform 0.3s ease;
+	.circle-container {
+		position: relative;
+		/* Fill available space: use the smaller of width or remaining height */
+		width: min(680px, 88vw, calc(100vh - 200px));
+		aspect-ratio: 1;
+	}
+
+	.circle-ring {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+	}
+
+	.circle-center-label {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		pointer-events: none;
+		width: 30%;
+		max-width: 180px;
+	}
+
+	.circle-node {
+		position: absolute;
+		transform: translate(-50%, -50%);
+		z-index: 1;
 	}
 
 	.key-node {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 8px;
+		gap: 5px;
 		text-decoration: none;
-		position: relative;
 	}
 	.key-node:hover {
 		text-decoration: none;
@@ -189,46 +243,64 @@
 	}
 
 	.key-node:not(.locked):hover .node-inner {
-		transform: scale(1.08);
+		transform: scale(1.1);
 		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 	}
 
 	.key-node:not(.locked):active .node-inner {
 		border-bottom-width: 2px;
-		transform: translateY(3px);
+		transform: translateY(2px);
 	}
 
 	.node-label {
 		line-height: 1;
 	}
 
-	.start-badge {
-		position: absolute;
-		top: -10px;
-		left: 50%;
-		transform: translateX(-50%);
-		background: var(--color-primary);
-		color: var(--color-bg);
-		font-size: 11px;
-		font-weight: 800;
-		letter-spacing: 1px;
-		padding: 3px 10px;
-		border-radius: 8px;
-		text-transform: uppercase;
-		pointer-events: none;
-	}
-
 	.node-progress-dots {
 		display: flex;
-		gap: 4px;
+		gap: 3px;
 	}
 	.dot {
-		width: 8px;
-		height: 8px;
+		width: 7px;
+		height: 7px;
 		border-radius: 50%;
 		background: var(--color-bg-elevated);
 	}
 	.dot.filled {
 		background: var(--color-success);
+	}
+
+	/* Mobile: switch to 3-column grid */
+	@media (max-width: 480px) {
+		.circle-container {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 20px 12px;
+			width: 100%;
+			aspect-ratio: auto;
+			padding: 0 8px;
+		}
+
+		.circle-ring,
+		.circle-center-label {
+			display: none;
+		}
+
+		.circle-node {
+			position: static;
+			transform: none;
+			justify-self: center;
+		}
+
+		.node-inner {
+			width: 60px;
+			height: 60px;
+			font-size: 17px;
+		}
+
+		.dot {
+			width: 6px;
+			height: 6px;
+		}
 	}
 </style>

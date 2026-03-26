@@ -1,16 +1,45 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { progress } from '$lib/stores/index.svelte.js';
 	import { EXERCISE_TYPES } from '$lib/exercises/config.js';
 	import { KEY_ORDER } from '$lib/theory/index.js';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 
 	let mounted = $state(false);
+	let tileEls: (HTMLAnchorElement | undefined)[] = $state([]);
 
 	onMount(() => {
 		progress.init();
 		mounted = true;
+		// Auto-focus first tile after mount
+		tick().then(() => tileEls[0]?.focus());
 	});
+
+	function handleKeydown(e: KeyboardEvent) {
+		const tiles = tileEls.filter((el): el is HTMLAnchorElement => !!el);
+		if (!tiles.length) return;
+
+		const currentIdx = tiles.findIndex((el) => el === document.activeElement);
+
+		if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+			e.preventDefault();
+			const next = currentIdx < tiles.length - 1 ? currentIdx + 1 : 0;
+			tiles[next].focus();
+		} else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+			e.preventDefault();
+			const prev = currentIdx > 0 ? currentIdx - 1 : tiles.length - 1;
+			tiles[prev].focus();
+		}
+
+		// Number keys 1-4 to jump directly
+		const num = parseInt(e.key);
+		if (num >= 1 && num <= tiles.length) {
+			e.preventDefault();
+			tiles[num - 1].focus();
+		}
+	}
 
 	const currentKey = $derived(decodeURIComponent(page.params.key));
 	const keyIndex = $derived(KEY_ORDER.indexOf(currentKey));
@@ -31,6 +60,8 @@
 		exercises.filter((e) => e.progress.completed).length
 	);
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 {#if mounted}
 	<div class="page">
@@ -54,9 +85,10 @@
 		</div>
 
 		<div class="exercise-grid">
-			{#each exercises as exercise}
+			{#each exercises as exercise, i}
 				<a
-					href="/key/{encodeURIComponent(currentKey)}/{exercise.id}"
+					bind:this={tileEls[i]}
+					href="{base}/key/{encodeURIComponent(currentKey)}/{exercise.id}"
 					class="exercise-tile"
 					class:completed={exercise.progress.completed}
 				>
@@ -165,10 +197,16 @@
 		color: var(--color-text);
 		transition: all 0.1s;
 	}
-	.exercise-tile:hover {
+	.exercise-tile:hover,
+	.exercise-tile:focus-visible {
 		border-color: var(--color-text-muted);
 		background: var(--color-bg-elevated);
 		text-decoration: none;
+		outline: none;
+	}
+	.exercise-tile:focus-visible {
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 30%, transparent);
 	}
 	.exercise-tile:active {
 		border-bottom-width: 2px;

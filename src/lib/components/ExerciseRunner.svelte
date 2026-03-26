@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { getDiatonicChords, getChordByDegree, getRomanNumeral, type Chord } from '$lib/theory/index.js';
 	import { progress, sessionState, userPreferences } from '$lib/stores/index.svelte.js';
 	import { getExerciseType, type ExerciseType } from '$lib/exercises/config.js';
 	import MultipleChoice from './MultipleChoice.svelte';
 	import TextInput from './TextInput.svelte';
+	import NumberPad from './NumberPad.svelte';
 	import DragDrop from './DragDrop.svelte';
 	import AudioPlayer from './AudioPlayer.svelte';
 	import FeedbackDisplay from './FeedbackDisplay.svelte';
@@ -20,6 +22,8 @@
 	const exerciseType = $derived(getExerciseType(exerciseId));
 	const chords = $derived(getDiatonicChords(exerciseKey));
 	const difficulty = $derived(userPreferences.value.difficulty);
+	const timerEnabled = $derived(userPreferences.value.timerEnabled);
+	const timerDuration = $derived(userPreferences.value.timerDuration);
 
 	// Session state
 	let questions = $state<Question[]>([]);
@@ -31,15 +35,23 @@
 	let lastUserAnswer = $state('');
 	let disabled = $state(false);
 
+	// Timer state
+	let timerRemaining = $state(0);
+	let timerTotal = $state(0);
+	let timerInterval: ReturnType<typeof setInterval> | null = null;
+	const timerActive = $derived(timerEnabled && timerTotal > 0);
+
 	type Question = {
 		prompt: string;
-		type: 'multipleChoice' | 'text' | 'dragDrop' | 'audio';
+		type: 'multipleChoice' | 'text' | 'dragDrop' | 'audio' | 'numberPad';
 		options?: string[];
 		slots?: string[];
 		items?: string[];
 		correctAnswer: string | string[];
 		targetChord?: Chord;
 		referenceChord?: Chord;
+		displayTarget?: string;
+		showChordLabels?: boolean;
 	};
 
 	type AnswerRecord = {
@@ -73,12 +85,72 @@
 		['major', 'minor', 'minor', 'major', 'major', 'minor', 'diminished'];
 
 	function normalizeAnswer(input: string): string {
-		const s = input.trim().toLowerCase();
+		let s = input.trim().toLowerCase();
+
+		// Plain number → roman numeral (e.g. "3" → "iii")
 		const num = parseInt(s, 10);
 		if (num >= 1 && num <= 7 && s === String(num)) {
 			return getRomanNumeral(num, DIATONIC_QUALITIES[num - 1]).toLowerCase();
 		}
-		return s.replace(/°/g, '°');
+
+		// Normalize degree symbol variants
+		s = s.replace(/°/g, '°');
+
+		// Normalize chord name variants:
+		// "em" "emin" "e minor" "e min" "e-" → "e min"
+		// "cmaj" "c major" "c maj" "cM" → "c maj"
+		// "bdim" "b diminished" "b dim" "b°" → "b dim"
+		s = s
+			.replace(/\bdiminished\b/g, 'dim')
+			.replace(/\bminor\b/g, 'min')
+			.replace(/\bmajor\b/g, 'maj');
+
+		// Handle shorthand with no space: "em" → "e min", "cmaj" → "c maj", "f#dim" → "f# dim"
+		// Match note (letter + optional # or b) followed directly by quality keyword
+		s = s.replace(/^([a-g][#b]?)(min|maj|dim|m)$/i, (_, note, qual) => {
+			if (qual === 'm') qual = 'min';
+			return `${note} ${qual}`;
+		});
+
+		// Bare note name with no quality → assume major (e.g. "c" → "c maj", "f#" → "f# maj")
+		if (/^[a-g][#b]?$/.test(s)) {
+			s = `${s} maj`;
+		}
+
+		return s;
+	}
+
+	function startTimer() {
+		stopTimer();
+		const enabled = userPreferences.value.timerEnabled;
+		const duration = userPreferences.value.timerDuration;
+		if (!enabled || !duration) return;
+		timerTotal = duration;
+		timerRemaining = duration;
+		timerInterval = setInterval(() => {
+			timerRemaining = Math.max(0, timerRemaining - 0.1);
+			if (timerRemaining <= 0) {
+				stopTimer();
+				timerExpired();
+			}
+		}, 100);
+	}
+
+	function stopTimer() {
+		if (timerInterval) {
+			clearInterval(timerInterval);
+			timerInterval = null;
+		}
+	}
+
+	function timerExpired() {
+		disabled = true;
+		phase = 'summary';
+		if (!exerciseType) return;
+		const correctCount = answers.filter((a) => a.correct).length;
+		const total = questions.length;
+		const score = total > 0 ? correctCount / total : 0;
+		progress.recordExerciseResult(exerciseKey, exerciseId, score, false);
 	}
 
 	function generateQuestions() {
@@ -87,6 +159,7 @@
 		currentIndex = 0;
 		answers = [];
 		phase = 'question';
+		stopTimer();
 
 		if (exerciseId === 'chordSpelling') {
 			const romanNumerals = chords.map((c) => c.roman);
@@ -102,24 +175,22 @@
 			const degrees = randomDegrees(exerciseType.questionsPerSession);
 			questions = degrees.map((deg) => {
 				const chord = getChordByDegree(exerciseKey, deg);
-				const options = chords.map((c) => c.roman);
 				return {
-					prompt: `What scale degree is ${chord.name}?`,
-					type: difficulty === 'beginner' ? 'multipleChoice' as const : 'text' as const,
-					options,
-					correctAnswer: chord.roman
+					prompt: 'What chord is this?',
+					type: 'text' as const,
+					displayTarget: chord.roman,
+					correctAnswer: chord.name
 				};
 			});
 		} else if (exerciseId === 'identifyChord') {
 			const degrees = randomDegrees(exerciseType.questionsPerSession);
 			questions = degrees.map((deg) => {
 				const chord = getChordByDegree(exerciseKey, deg);
-				const options = chords.map((c) => c.name);
 				return {
-					prompt: `What chord is the ${chord.roman}?`,
-					type: difficulty === 'beginner' ? 'multipleChoice' as const : 'text' as const,
-					options,
-					correctAnswer: chord.name
+					prompt: 'What number is this chord?',
+					type: 'numberPad' as const,
+					displayTarget: chord.name,
+					correctAnswer: chord.roman,
 				};
 			});
 		} else if (exerciseId === 'audioId') {
@@ -138,6 +209,8 @@
 				};
 			});
 		}
+
+		startTimer();
 	}
 
 	function handleAnswer(answer: string | string[]) {
@@ -183,6 +256,7 @@
 	}
 
 	function finishSession() {
+		stopTimer();
 		phase = 'summary';
 		if (!exerciseType) return;
 
@@ -199,11 +273,26 @@
 	}
 
 	function goBack() {
-		goto(`/key/${encodeURIComponent(exerciseKey)}`);
+		goto(`${base}/key/${encodeURIComponent(exerciseKey)}`);
 	}
 
 	function closeExercise() {
-		goto(`/key/${encodeURIComponent(exerciseKey)}`);
+		goto(`${base}/key/${encodeURIComponent(exerciseKey)}`);
+	}
+
+	function handleGlobalKeydown(e: KeyboardEvent) {
+		if (e.key !== 'Enter') return;
+		// Don't intercept Enter when typing in a text input (TextInput handles its own Enter)
+		if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
+
+		if (phase === 'summary') {
+			e.preventDefault();
+			if (passed) {
+				goBack();
+			} else {
+				retry();
+			}
+		}
 	}
 
 	const currentQuestion = $derived(questions[currentIndex]);
@@ -218,6 +307,8 @@
 		exerciseType ? (scoreData.total > 0 ? scoreData.correct / scoreData.total >= exerciseType.passThreshold : false) : false
 	);
 </script>
+
+<svelte:window onkeydown={handleGlobalKeydown} />
 
 {#if exerciseType && currentQuestion && phase !== 'summary'}
 	<div class="exercise-screen">
@@ -234,6 +325,17 @@
 			<div class="counter">{currentIndex + 1}/{questions.length}</div>
 		</div>
 
+		{#if timerActive}
+			<div class="timer-bar-wrap">
+				<div
+					class="timer-bar"
+					class:warning={timerRemaining > 0 && timerRemaining / timerTotal <= 0.25}
+					class:danger={timerRemaining > 0 && timerRemaining / timerTotal <= 0.10}
+					style="width: {(timerRemaining / timerTotal) * 100}%"
+				></div>
+			</div>
+		{/if}
+
 		<!-- Center content -->
 		<div class="center-content">
 			{#if phase === 'question'}
@@ -246,6 +348,10 @@
 						targetNotes={currentQuestion.targetChord.notes}
 						speed={userPreferences.value.playbackSpeed}
 					/>
+				{:else if currentQuestion.displayTarget}
+					<p class="key-badge">{exerciseKey} Major</p>
+					<p class="prompt-sub">{currentQuestion.prompt}</p>
+					<div class="display-target">{currentQuestion.displayTarget}</div>
 				{:else if currentQuestion.type === 'dragDrop'}
 					<h2 class="prompt-heading">{currentQuestion.prompt}</h2>
 					<p class="key-badge">{exerciseKey} Major</p>
@@ -260,6 +366,12 @@
 							slots={currentQuestion.slots}
 							items={currentQuestion.items}
 							onAnswer={handleAnswer}
+							{disabled}
+						/>
+					{:else if currentQuestion.type === 'numberPad'}
+						<NumberPad
+							onAnswer={(a) => handleAnswer(a)}
+							{chords}
 							{disabled}
 						/>
 					{:else if currentQuestion.type === 'multipleChoice' && currentQuestion.options}
@@ -343,6 +455,28 @@
 		color: var(--color-text);
 	}
 
+	.timer-bar-wrap {
+		max-width: 700px;
+		width: 100%;
+		margin: -16px auto 0;
+		height: 10px;
+		background: var(--color-bg-elevated);
+		border-radius: 6px;
+		overflow: hidden;
+	}
+	.timer-bar {
+		height: 100%;
+		background: var(--color-success);
+		border-radius: 6px;
+		transition: width 0.1s linear;
+	}
+	.timer-bar.warning {
+		background: var(--color-warning);
+	}
+	.timer-bar.danger {
+		background: var(--color-error);
+	}
+
 	.progress-track {
 		flex: 1;
 		height: 16px;
@@ -374,7 +508,7 @@
 		max-width: 600px;
 		width: 100%;
 		margin: 0 auto;
-		gap: 24px;
+		gap: 12px;
 	}
 
 	.key-badge {
@@ -398,8 +532,19 @@
 		text-align: center;
 	}
 
+	.display-target {
+		font-size: 80px;
+		font-weight: 800;
+		text-align: center;
+		line-height: 1;
+		color: var(--color-text);
+		padding: 16px 0;
+	}
+
 	.input-area {
 		width: 100%;
-		margin-top: 8px;
+		margin-top: 24px;
+		display: flex;
+		justify-content: center;
 	}
 </style>
